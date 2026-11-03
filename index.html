@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Editor Save FMM26 Modern by Irghy</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          pitch: { 500: '#10b981', 600: '#059669', 900: '#064e3b' },
+          bento: { dark: '#0b0f19', card: '#131c2e', hover: '#1c2942', border: '#233352' },
+          accent: { purple: '#a78bfa', blue: '#60a5fa', mint: '#34d399', amber: '#fbbf24', coral: '#f87171' }
+        },
+        fontFamily: {
+          sans: ['System-UI', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        }
+      }
+    }
+  }
+</script>
+<style>
+/* Custom Layout & Canvas Aesthetics */
+:root {
+  --bg-main: #0b0f19;
+  --card-bg: #131c2e;
+  --card-border: #233352;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: #f1f5f9;
+  font-variant-numeric: tabular-nums;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0b0f19; }
+::-webkit-scrollbar-thumb { background: #233352; border-radius: 99px; }
+
+/* Bento Card Glow & Transitions */
+.bento-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+
+.bento-card:hover {
+  border-color: #3b82f6;
+}
+
+/* Floating Navigation Notch Effect */
+.floating-nav {
+  background: rgba(19, 28, 46, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Custom Input Style */
+.input-field {
+  background-color: #0f172a;
+  border: 1px solid #233352;
+  color: #f8fafc;
+  border-radius: 0.875rem;
+  transition: all 0.2s ease;
+}
+.input-field:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+}
+
+/* Unicode Icon Badges */
+.icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+</style>
+</head>
+<body class="antialiased min-h-screen pb-32 pt-4 px-3 sm:px-6 max-w-2xl mx-auto">
+
+<!-- HERO BANNER WITH TACTICAL CANVAS -->
+<div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 p-6 border border-slate-800 shadow-2xl mb-5">
+  <canvas id="pitchBgCanvas" class="absolute inset-0 w-full h-full opacity-20 pointer-events-none"></canvas>
+  <div class="relative z-10 flex flex-col justify-between h-full">
+    <div class="flex items-center justify-between gap-2 mb-3">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/30 text-blue-300 text-xs font-bold uppercase tracking-wider">
+        <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        FMM 2026 Save Engine
+      </div>
+      <!-- CREATOR CREDIT BADGE HEADER -->
+      <span class="px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-extrabold tracking-wide shadow-sm flex items-center gap-1">
+        <span>✨</span> Created by Irghy
+      </span>
+    </div>
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight">Editor Save FMM26</h1>
+      <p class="text-slate-400 text-sm mt-1 max-w-md">Edit statistik, kemampuan (CA/PA), dan atribut pemain Football Manager Mobile 26 secara langsung di perangkat Anda.</p>
+    </div>
+  </div>
+</div>
+
+<!-- BACKUP ALERT BOX -->
+<div class="bento-card p-4 mb-5 border-l-4 border-l-amber-500 bg-amber-500/5 flex items-start gap-3">
+  <div class="icon-badge bg-amber-500/10 border-amber-500/30 text-amber-400 shrink-0">⚠️</div>
+  <div class="text-xs sm:text-sm text-amber-200/90 leading-relaxed">
+    <strong class="font-bold text-amber-300">Penting:</strong> Selalu buat cadangan (*backup*) file <code class="bg-amber-950/60 px-1.5 py-0.5 rounded text-amber-300 font-mono">.fms</code> Anda. File asli tidak pernah diubah; hasil editan disimpan ke file baru.
+  </div>
+</div>
+
+<!-- STEP 1: FILE PICKER -->
+<div id="s-file" class="bento-card p-5 mb-5">
+  <div class="flex items-center gap-3 mb-4">
+    <div class="icon-badge bg-blue-500/10 border-blue-500/30 text-blue-400">📂</div>
+    <div>
+      <h2 class="text-base font-bold text-white">1. Pilih Berkas Save Game</h2>
+      <p class="text-xs text-slate-400">Format file yang didukung: <span class="text-blue-400 font-semibold">.fms</span></p>
+    </div>
+  </div>
+  
+  <label for="file" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-2xl cursor-pointer bg-slate-900/50 hover:bg-slate-900 transition-all group">
+    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+      <span class="text-3xl mb-2 group-hover:scale-110 transition-transform">⚽</span>
+      <p class="text-sm font-semibold text-slate-300 group-hover:text-blue-400">Pilih berkas save .fms</p>
+      <p class="text-xs text-slate-500 mt-1">Klik di sini untuk mengunggah dari penyimpanan internal</p>
+    </div>
+  </label>
+  <input id="file" type="file" accept=".fms" class="hidden">
+  
+  <p id="fstat" class="text-xs text-slate-400 mt-3 text-center">Belum ada file terpilih. Pastikan file save diletakkan di folder Download.</p>
+</div>
+
+<!-- STEP 2: PLAYER SEARCH SECTION -->
+<div id="s-find" class="bento-card p-5 mb-5" hidden>
+  <div class="flex items-center gap-3 mb-4">
+    <div class="icon-badge bg-purple-500/10 border-purple-500/30 text-purple-400">🔍</div>
+    <div>
+      <h2 class="text-base font-bold text-white">2. Cari Pemain</h2>
+      <p class="text-xs text-slate-400">Temukan pemain berdasarkan Nama atau SID</p>
+    </div>
+  </div>
+
+  <!-- Capsule Tabs -->
+  <div class="flex p-1 bg-slate-950 rounded-xl mb-3 border border-slate-800" role="tablist">
+    <button id="t-name" type="button" class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all bg-blue-600 text-white shadow-md">Cari Nama</button>
+    <button id="t-sid" type="button" class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white">Cari SID (ID)</button>
+  </div>
+
+  <div class="flex gap-2">
+    <input id="q" type="text" autocomplete="off" placeholder="Contoh: Harry Kane atau Mbappé" class="input-field flex-1 px-4 py-2.5 text-sm">
+    <button id="go" type="button" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all shadow-lg shadow-blue-900/30">Cari</button>
+  </div>
+  <p id="hint" class="text-xs text-slate-400 mt-2">Ketik nama lengkap atau sebagian persis seperti di dalam game.</p>
+  
+  <!-- Search Results -->
+  <ul id="res" class="mt-4 space-y-2"></ul>
+</div>
+
+<!-- STEP 3: PLAYER EDITOR FORM -->
+<div id="s-edit" class="bento-card p-5 mb-5" hidden>
+  <!-- Player Card Header -->
+  <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+    <div class="flex items-center gap-3">
+      <canvas id="playerAvatarCanvas" width="48" height="48" class="rounded-full border-2 border-blue-500/40 shadow-md"></canvas>
+      <div>
+        <h2 id="pname" class="text-lg font-black text-white leading-tight">Nama Pemain</h2>
+        <div class="flex items-center gap-2 mt-0.5">
+          <p id="pmeta" class="text-xs font-mono text-blue-400">SID: 0000 • CA: 0 • PA: 0</p>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30">by Irghy</span>
+        </div>
+      </div>
+    </div>
+    <button id="close" type="button" class="px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-all">Tutup</button>
+  </div>
+
+  <div id="form" class="space-y-3"></div>
+
+  <div class="mt-5 pt-3 border-t border-slate-800">
+    <button id="apply" type="button" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl text-sm transition-all shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2">
+      <span>⚡</span> Terapkan Perubahan Pemain
+    </button>
+  </div>
+  <p id="toast" class="text-xs font-semibold text-emerald-400 mt-2 text-center min-h-[1.5em]" role="status"></p>
+</div>
+
+<!-- CHANGE LOG SHEET -->
+<div id="s-log" class="bento-card p-5 mb-5" hidden>
+  <div class="flex items-center gap-3 mb-3">
+    <div class="icon-badge bg-emerald-500/10 border-emerald-500/30 text-emerald-400">📋</div>
+    <h2 class="text-base font-bold text-white">Daftar Perubahan Aktif</h2>
+  </div>
+  <ol id="log" class="list-decimal list-inside text-xs text-slate-300 space-y-1 bg-slate-950/60 p-3 rounded-xl border border-slate-800"></ol>
+</div>
+
+<!-- GUIDE ACCORDION -->
+<div class="bento-card p-4 mb-5">
+  <details class="group">
+    <summary class="flex items-center justify-between text-xs font-bold text-slate-300 cursor-pointer list-none select-none">
+      <span class="flex items-center gap-2"><span>ℹ️</span> Panduan Skala &amp; Status Tag</span>
+      <span class="text-slate-500 group-open:rotate-180 transition-transform">▼</span>
+    </summary>
+    <div class="mt-3 pt-3 border-t border-slate-800 text-xs text-slate-400 space-y-2 leading-relaxed">
+      <p><span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">TERUJI</span> Telah terverifikasi berfungsi presisi di dalam save game.</p>
+      <p><span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400">DUGAAN</span> Lokasi byte terdeteksi, nilai game dikalkulasi secara estimasi.</p>
+      <p><span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 border border-rose-500/30 text-rose-400">BELUM DIUJI</span> Alamat memori terbaca namun belum dites efek langsungnya.</p>
+      <p class="text-slate-500">Nilai atribut berskala byte (0–255) otomatis dikonversi ke perkiraan angka 1–20 seperti yang muncul di menu permainan FMM26.</p>
+    </div>
+  </details>
+</div>
+
+<!-- FLOATING ACTION NAVIGATION BAR -->
+<div class="fixed bottom-0 left-0 right-0 z-50 floating-nav px-4 py-3">
+  <div class="max-w-2xl mx-auto flex items-center justify-between gap-3">
+    <div class="flex flex-col">
+      <span id="bstat" class="text-xs font-medium text-slate-300">Belum ada file dimuat</span>
+      <span class="text-[10px] text-slate-400 font-semibold">Created by <span class="text-indigo-400 font-bold">Irghy</span> • Safe Engine</span>
+    </div>
+    <button id="save" type="button" disabled class="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold px-5 py-2.5 rounded-xl text-xs sm:text-sm transition-all shadow-lg shadow-blue-950/50 flex items-center gap-2">
+      <span>💾</span> Simpan Hasil Save
+    </button>
+  </div>
+</div>
+
+<script>
+/* ENGINE CORE LOGIC */
+function createEngine(buf){
+  var n=buf.length;
+  var dv=new DataView(buf.buffer,buf.byteOffset,buf.byteLength);
+  function u16(o){return dv.getUint16(o,true);}
+  function u32(o){return dv.getUint32(o,true);}
+  var OFF_REP=[55,57,59];
+
+  function plausible(A){
+    if(A+70>n) return false;
+    for(var i=34;i<49;i++){var b=buf[A+i]; if(b<1||b>20) return false;}
+    if(buf[A+49]<1||buf[A+49]>20||buf[A+50]<1||buf[A+50]>20) return false;
+    var ca=u16(A+51),pa=u16(A+53);
+    if(ca<1||ca>255||pa<1||pa>255) return false;
+    for(var k=0;k<3;k++) if(u16(A+OFF_REP[k])>10000) return false;
+    return true;
+  }
+
+  var attrIndex=new Map();
+  (function(){
+    var i=0,lim=n-17;
+    while(i<lim){
+      if(buf[i]===0&&buf[i+1]===0&&buf[i+2]===0&&buf[i+3]===0&&buf[i+4]===0&&buf[i+7]===0&&buf[i+8]===0){
+        var A=i+13;
+        if(plausible(A)) attrIndex.set(u32(i+5),A);
+        i=A;
+      } else i++;
+    }
+  })();
+  var firstAttr=n;
+  attrIndex.forEach(function(A){ if(A-8<firstAttr) firstAttr=A-8; });
+
+  function findSid(p){
+    for(var q=p+58;q<p+72;q++){
+      if(buf[q+2]!==0||buf[q+3]!==0) continue;
+      if(buf[q]===0&&buf[q+1]===0) continue;
+      var c=u32(q);
+      if(!attrIndex.has(c)) continue;
+      var ok=true;
+      for(var k=1;k<=4;k++){var b=buf[q-k]; if(b<1||b>20){ok=false;break;}}
+      if(!ok) continue;
+      var ff=false;
+      for(var j=q+4;j<=q+12;j++){ if(buf[j]===255&&buf[j+1]===255&&buf[j+2]===255&&buf[j+3]===255){ff=true;break;} }
+      if(ff) return c;
+    }
+    return null;
+  }
+
+  var mainIndex=new Map();
+  (function(){
+    for(var p=0;p<firstAttr-80;p++){
+      if(buf[p+16]!==255||buf[p+17]!==255||buf[p+18]!==255||buf[p+19]!==255) continue;
+      if(buf[p+2]!==0||buf[p+3]!==0) continue;
+      var y=buf[p+22]|(buf[p+23]<<8), doy=buf[p+20]|(buf[p+21]<<8);
+      if(y<1930||y>2026||doy>365) continue;
+      var sid=findSid(p);
+      if(sid!==null&&!mainIndex.has(sid)) mainIndex.set(sid,p);
+    }
+  })();
+
+  function findPair(b){
+    var lim=firstAttr-8,pos=0;
+    for(;;){
+      pos=buf.indexOf(b[0],pos);
+      if(pos<0||pos>lim) return -1;
+      var ok=true;
+      for(var k=1;k<8;k++){ if(buf[pos+k]!==b[k]){ok=false;break;} }
+      if(ok) return pos;
+      pos++;
+    }
+  }
+
+  function title(s){return s.replace(/(^|\s)(\S)/g,function(m,a,b){return a+b.toUpperCase();});}
+  var enc=new TextEncoder();
+  function decode(bytes){
+    try{ return new TextDecoder('utf-8',{fatal:true}).decode(bytes); }catch(e){ return null; }
+  }
+
+  function searchName(text,max){
+    text=(text||'').trim();
+    if(text.length<3) return [];
+    var variants=[text,title(text),text.toLowerCase(),text.toUpperCase()];
+    var seenV={},vs=[];
+    variants.forEach(function(v){ if(!seenV[v]){seenV[v]=1;vs.push(v);} });
+    var start=Math.floor(n*0.5), seenH={}, bySid={}, pairCache={};
+    vs.forEach(function(v){
+      var nb=enc.encode(v), pos=start;
+      for(;;){
+        pos=buf.indexOf(nb[0],pos);
+        if(pos<0||pos>=n-nb.length) break;
+        var hit=true;
+        for(var k=1;k<nb.length;k++){ if(buf[pos+k]!==nb[k]){hit=false;break;} }
+        if(!hit){pos++;continue;}
+        var i=pos; pos++;
+        var full=null;
+        for(var back=0;back<40;back++){
+          var o=i-back-4; if(o<0) break;
+          var L=u32(o);
+          if(L>=back+nb.length&&L<=60&&o+4+L<=n){
+            var s=decode(buf.subarray(o+4,o+4+L));
+            if(s&&!/[\u0000-\u001f\u007f]/.test(s)&&s.indexOf(v)>=0){ full={h:o,name:s}; break; }
+          }
+        }
+        if(!full||seenH[full.h]) continue;
+        seenH[full.h]=1;
+        var h=full.h;
+        for(var o2=h+20;o2<h+420&&o2+95<n;o2++){
+          if(buf[o2+2]!==0||buf[o2+3]!==0) continue;
+          if(buf[o2]===0&&buf[o2+1]===0) continue;
+          var okp=true;
+          for(var m=1;m<=14;m++){var bb=buf[o2-m]; if(bb<1||bb>20){okp=false;break;}}
+          if(!okp) continue;
+          var pair=new Uint8Array(8);
+          for(var t=0;t<4;t++){pair[t]=buf[o2+t];pair[4+t]=buf[o2+91+t];}
+          var key=pair.join(',');
+          var p=pairCache[key];
+          if(p===undefined){ p=findPair(pair); pairCache[key]=p; }
+          if(p<0) continue;
+          var sid=findSid(p);
+          if(sid!==null){
+            if(!bySid[sid]||bySid[sid].length<full.name.length) bySid[sid]=full.name;
+            break;
+          }
+        }
+        if(Object.keys(bySid).length>=(max||30)) return;
+      }
+    });
+    return Object.keys(bySid).map(function(k){
+      var sid=+k,A=attrIndex.get(sid);
+      return {sid:sid,name:bySid[k],ca:u16(A+51),pa:u16(A+53)};
+    });
+  }
+
+  function readPlayer(sid){
+    var A=attrIndex.get(sid);
+    if(A===undefined) return null;
+    var slots=[]; for(var i=0;i<34;i++) slots.push(buf[A+i]);
+    var p=mainIndex.get(sid), dob=null;
+    if(p!==undefined) dob={p:p,doy:u16(p+20),year:u16(p+22)};
+    return {sid:sid,A:A,slots:slots,left:buf[A+49],right:buf[A+50],ca:u16(A+51),pa:u16(A+53),
+            rep:OFF_REP.map(function(k){return u16(A+k);}),dob:dob};
+  }
+  function setByte(o,v){ buf[o]=v&255; }
+  function setU16(o,v){ dv.setUint16(o,v,true); }
+
+  var NS=[-128,-96,-66,-36,-6,10,25,45,70,100,127];
+  var NP=[2.1,4.3,6.9,10.5,13.6,15.0,16.9,17.8,18.2,19.1,19.5];
+  function estReal(raw,ca){
+    var s=raw>=128?raw-256:raw, j=0;
+    while(j<NS.length-2&&s>NS[j+1]) j++;
+    var t=(s-NS[j])/(NS[j+1]-NS[j]); t=Math.min(1,Math.max(0,t));
+    var p=NP[j]+(NP[j+1]-NP[j])*t;
+    return Math.min(20,Math.max(1,p+0.054*((ca||170)-170)));
+  }
+  function estimate(raw,ca){ return Math.round(estReal(raw,ca)); }
+  function rawForTarget(target,ca){
+    var c=[],s,raw;
+    for(s=-128;s<=127;s++){ raw=s<0?s+256:s; if(estimate(raw,ca)===target) c.push(s); }
+    if(!c.length){
+      var best=0,bd=1e9;
+      for(s=-128;s<=127;s++){ raw=s<0?s+256:s; var d=Math.abs(estReal(raw,ca)-target); if(d<bd){bd=d;best=s;} }
+      c.push(best);
+    }
+    var m=c[Math.floor(c.length/2)];
+    return m<0?m+256:m;
+  }
+
+  return {buf:buf,count:attrIndex.size,mainCount:mainIndex.size,attrIndex:attrIndex,mainIndex:mainIndex,
+          searchName:searchName,readPlayer:readPlayer,setByte:setByte,setU16:setU16,
+          estimate:estimate,rawForTarget:rawForTarget};
+}
+</script>
+
+<script>
+/* CANVAS GENERATORS FOR GRAPHICS & ICONOGRAPHY */
+function drawPitchCanvas() {
+  var cvs = document.getElementById('pitchBgCanvas');
+  if(!cvs) return;
+  var ctx = cvs.getContext('2d');
+  var w = cvs.width = cvs.offsetWidth || 600;
+  var h = cvs.height = cvs.offsetHeight || 200;
+  
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+  ctx.lineWidth = 1.5;
+  
+  // Outer boundary
+  ctx.strokeRect(10, 10, w - 20, h - 20);
+  // Center line
+  ctx.beginPath();
+  ctx.moveTo(w / 2, 10); ctx.lineTo(w / 2, h - 10);
+  ctx.stroke();
+  // Center circle
+  ctx.beginPath();
+  ctx.arc(w / 2, h / 2, 35, 0, Math.PI * 2);
+  ctx.stroke();
+  // Penalty box left
+  ctx.strokeRect(10, h / 2 - 40, 50, 80);
+  // Penalty box right
+  ctx.strokeRect(w - 60, h / 2 - 40, 50, 80);
+}
+
+function drawPlayerAvatar(name, ca) {
+  var cvs = document.getElementById('playerAvatarCanvas');
+  if(!cvs) return;
+  var ctx = cvs.getContext('2d');
+  var w = cvs.width, h = cvs.height;
+  
+  // Background Gradient based on CA
+  var grad = ctx.createLinearGradient(0, 0, w, h);
+  if(ca >= 160) {
+    grad.addColorStop(0, '#8b5cf6'); grad.addColorStop(1, '#3b82f6');
+  } else if(ca >= 130) {
+    grad.addColorStop(0, '#3b82f6'); grad.addColorStop(1, '#10b981');
+  } else {
+    grad.addColorStop(0, '#64748b'); grad.addColorStop(1, '#334155');
+  }
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(w/2, h/2, w/2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Initials Text
+  var initials = "P";
+  if(name) {
+    var parts = name.trim().split(" ");
+    if(parts.length >= 2) initials = (parts[0][0] + parts[1][0]).toUpperCase();
+    else initials = name.substr(0, 2).toUpperCase();
+  }
+  
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 16px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(initials, w / 2, h / 2);
+}
+
+window.addEventListener('resize', drawPitchCanvas);
+setTimeout(drawPitchCanvas, 100);
+</script>
+
+<script>
+/* UI INTERACTION CONTROLLER */
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var eng=null, fileName='save.fms', cur=null, changes=[], mode='name';
+
+  var TAG={
+    ok:'<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">TERUJI</span>',
+    mid:'<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400">DUGAAN</span>',
+    no:'<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 border border-rose-500/30 text-rose-400">BELUM DIUJI</span>'
+  };
+  var DIRECT=[
+    ['Pace','Kecepatan',10,'mid'],['Stamina','Stamina',12,'mid'],['Strength','Kekuatan',11,'mid'],
+    ['Technique','Teknik',13,'mid'],['Aggression','Agresi',15,'mid'],['Leadership','Kepemimpinan',18,'mid']
+  ];
+  var COMBO=[
+    ['Teamwork','Kerja Sama','mid',[9,25],'avg','Unselfishness & Work Rate'],
+    ['Aerial (pemain luar)','Aerial','mid',[5,6],'max','Heading & Jumping']
+  ];
+  var SIGNED=[
+    ['Crossing','Umpan Silang',0],['Dribbling','Dribel',1],['Tackling','Tekel',2],['Passing','Operan',7],
+    ['Decisions','Keputusan',8],['Creativity','Kreativitas',22],['Movement','Pergerakan',23],
+    ['Positioning','Pemosisian',24],['Finishing','Finishing',3],['Long Shots','Tendangan Jauh',4]
+  ];
+  var GK=[
+    ['Handling','Penguasaan',27],['Kicking','Tendangan',28],['Aerial (kiper)','Aerial Kiper',30],
+    ['Reflexes','Refleks',31],['Throwing','Lemparan',33]
+  ];
+  var HIDDEN=[['Consistency',14],['Big Matches',16],['Versatility',19],['Set Pieces',20],['Penalties',21]];
+
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function status(msg,isErr){var e=$('fstat'); e.textContent=msg; e.className=isErr?'text-xs text-rose-400 font-semibold mt-3 text-center':'text-xs text-slate-400 mt-3 text-center';}
+  function later(fn){setTimeout(fn,30);}
+
+  $('file').addEventListener('change',function(ev){
+    var f=ev.target.files&&ev.target.files[0]; if(!f) return;
+    fileName=f.name; status('Membaca '+f.name+' ...');
+    var r=new FileReader();
+    r.onerror=function(){status('Gagal membaca file. Coba salin file ke folder Download.',true);};
+    r.onload=function(){
+      status('Memindai data pemain (beberapa detik) ...');
+      later(function(){
+        try{
+          eng=createEngine(new Uint8Array(r.result));
+        }catch(e){ status('File tidak valid: '+e.message,true); return; }
+        if(eng.count<1000){ status('Bukan save FMM26 yang didukung ('+eng.count+' pemain).',true); eng=null; return; }
+        changes=[]; renderLog(); closeEditor();
+        status(f.name+' • '+(f.size/1048576).toFixed(1)+' MB • '+eng.count.toLocaleString('id-ID')+' pemain terbaca.');
+        $('s-find').hidden=false; $('res').innerHTML='';
+        updateBar();
+      });
+    };
+    r.readAsArrayBuffer(f);
+  });
+
+  function setMode(m){
+    mode=m;
+    $('t-name').className=m==='name'?'flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all bg-blue-600 text-white shadow-md':'flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white';
+    $('t-sid').className=m==='sid'?'flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all bg-blue-600 text-white shadow-md':'flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white';
+    $('q').placeholder=m==='name'?'Contoh: Harry Kane atau Mbappé':'SID desimal (3193) atau hex (790c0000)';
+    $('hint').innerHTML=m==='name'?'Ketik nama lengkap atau sebagian persis seperti di game.':'SID bisa berupa desimal biasa atau kode hex 8 digit.';
+    $('res').innerHTML='';
+  }
+  $('t-name').onclick=function(){setMode('name');};
+  $('t-sid').onclick=function(){setMode('sid');};
+
+  function parseSid(s){
+    s=s.trim().toLowerCase();
+    if(/^[0-9a-f]{8}$/.test(s)){
+      return parseInt(s.substr(6,2)+s.substr(4,2)+s.substr(2,2)+s.substr(0,2),16);
+    }
+    return /^\d+$/.test(s)?parseInt(s,10):NaN;
+  }
+
+  function doSearch(){
+    if(!eng) return;
+    var q=$('q').value, res=$('res'); res.innerHTML='';
+    if(mode==='sid'){
+      var sid=parseSid(q);
+      if(isNaN(sid)||!eng.attrIndex.has(sid)){ res.innerHTML='<li class="text-xs text-rose-400 p-3 bg-rose-500/10 rounded-xl border border-rose-500/20">SID tidak ditemukan dalam file ini.</li>'; return; }
+      openPlayer(sid); return;
+    }
+    if(q.trim().length<3){ res.innerHTML='<li class="text-xs text-rose-400 p-3 bg-rose-500/10 rounded-xl border border-rose-500/20">Ketik minimal 3 huruf.</li>'; return; }
+    res.innerHTML='<li class="text-xs text-slate-400 p-3 text-center">Memindai database pemain...</li>';
+    later(function(){
+      var list=eng.searchName(q,30);
+      if(!list.length){ res.innerHTML='<li class="text-xs text-amber-400 p-3 bg-amber-500/10 rounded-xl border border-amber-500/20 text-center">Pemain tidak ditemukan. Periksa ejaan nama.</li>'; return; }
+      list.sort(function(a,b){return b.ca-a.ca;});
+      res.innerHTML=list.map(function(p){
+        return '<li data-sid="'+p.sid+'" class="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-blue-500/50 cursor-pointer transition-all group">'+
+          '<div class="flex items-center gap-3">'+
+            '<div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center font-bold text-white text-xs border border-blue-400/30 shadow-sm group-hover:scale-105 transition-transform">⚽</div>'+
+            '<div><b class="text-sm font-bold text-white group-hover:text-blue-300 transition-colors">'+esc(p.name)+'</b><br><span class="text-[11px] font-mono text-slate-400">SID: '+p.sid+'</span></div>'+
+          '</div>'+
+          '<div class="text-right"><span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/10 border border-blue-500/30 text-blue-300">CA '+p.ca+' / PA '+p.pa+'</span></div>'+
+        '</li>';
+      }).join('');
+    });
+  }
+  $('go').onclick=doSearch;
+  $('q').addEventListener('keydown',function(e){if(e.key==='Enter')doSearch();});
+  $('res').addEventListener('click',function(e){
+    var li=e.target.closest('li[data-sid]'); if(li) openPlayer(parseInt(li.getAttribute('data-sid'),10),li.querySelector('b').textContent);
+  });
+
+  var MONTHS=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  function dobParts(d){
+    var t=new Date(Date.UTC(d.year,0,1)+d.doy*86400000);
+    return {d:t.getUTCDate(),m:t.getUTCMonth()+1,y:t.getUTCFullYear()};
+  }
+
+  function pipHtml(v){
+    var pct = Math.round((Math.min(20,Math.max(0,v))/20)*100);
+    return '<div class="h-1.5 w-full bg-slate-800 rounded-full mt-1.5 overflow-hidden"><div class="h-full bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full transition-all duration-300" style="width:'+pct+'%"></div></div>';
+  }
+
+  function openPlayer(sid,name){
+    var p=eng.readPlayer(sid); if(!p) return;
+    cur=p; cur.name=name||('SID '+sid);
+    $('pname').textContent=cur.name;
+    $('pmeta').textContent='SID: '+sid+' • CA: '+p.ca+' • PA: '+p.pa;
+    drawPlayerAvatar(cur.name, p.ca);
+
+    var h='';
+    h+='<details open class="group bg-slate-900/40 rounded-xl border border-slate-800 overflow-hidden"><summary class="flex items-center justify-between p-3.5 font-bold text-xs text-slate-200 cursor-pointer select-none bg-slate-900/80"><span>📊 Atribut Utama (CA / PA)</span><span class="text-slate-500 group-open:rotate-180 transition-transform">▼</span></summary><div class="p-3.5 space-y-2 border-t border-slate-800">';
+    h+=numRow('ca','Current Ability (CA)',p.ca,1,255,TAG.ok);
+    h+=numRow('pa','Potential Ability (PA)',p.pa,1,255,TAG.ok);
+    if(p.dob){
+      var d=dobParts(p.dob);
+      h+='<div class="pt-2"><label class="text-xs font-bold text-slate-300 block mb-1">Tanggal Lahir '+TAG.ok+'</label>'+
+         '<div class="grid grid-cols-3 gap-2">'+
+         '<input type="number" inputmode="numeric" data-k="dob-d" data-o="'+d.d+'" value="'+d.d+'" min="1" max="31" class="input-field px-3 py-1.5 text-center text-xs font-mono" placeholder="Tgl">'+
+         '<input type="number" inputmode="numeric" data-k="dob-m" data-o="'+d.m+'" value="'+d.m+'" min="1" max="12" class="input-field px-3 py-1.5 text-center text-xs font-mono" placeholder="Bln">'+
+         '<input type="number" inputmode="numeric" data-k="dob-y" data-o="'+d.y+'" value="'+d.y+'" min="1930" max="2026" class="input-field px-3 py-1.5 text-center text-xs font-mono" placeholder="Thn">'+
+         '</div></div>';
+    }
+    h+=numRow('left','Kemampuan Kaki Kiri (1–20)',p.left,1,20,TAG.no);
+    h+=numRow('right','Kemampuan Kaki Kanan (1–20)',p.right,1,20,TAG.no);
+    h+='</div></details>';
+
+    h+='<details class="group bg-slate-900/40 rounded-xl border border-slate-800 overflow-hidden"><summary class="flex items-center justify-between p-3.5 font-bold text-xs text-slate-200 cursor-pointer select-none bg-slate-900/80"><span>🏃 Atribut Fisik &amp; Teknik (1–20)</span><span class="text-slate-500 group-open:rotate-180 transition-transform">▼</span></summary><div class="p-3.5 space-y-2 border-t border-slate-800">';
+    DIRECT.forEach(function(a){ h+=numRow('s'+a[2],a[0]+' / '+a[1],p.slots[a[2]],1,20,TAG[a[3]]); });
+    COMBO.forEach(function(a){
+      var v=a[4]==='avg'?Math.floor((p.slots[a[3][0]]+p.slots[a[3][1]])/2):Math.max(p.slots[a[3][0]],p.slots[a[3][1]]);
+      h+=numRow('c'+a[3].join('_'),a[0]+' / '+a[1],v,1,20,TAG[a[2]],a[5]);
+    });
+    h+=numRow('s29','Agility / Kelincahan (Kiper)',p.slots[29],1,20,TAG.mid);
+    h+='</div></details>';
+
+    h+='<details class="group bg-slate-900/40 rounded-xl border border-slate-800 overflow-hidden"><summary class="flex items-center justify-between p-3.5 font-bold text-xs text-slate-200 cursor-pointer select-none bg-slate-900/80"><span>⚽ Atribut Berskala Byte (0–255)</span><span class="text-slate-500 group-open:rotate-180 transition-transform">▼</span></summary><div class="p-3.5 space-y-2 border-t border-slate-800">';
+    SIGNED.forEach(function(a){ h+=sgRow(a[2],a[0]+' / '+a[1],p.slots[a[2]],TAG.ok); });
+    h+='</div></details>';
+
+    h+='<details class="group bg-slate-900/40 rounded-xl border border-slate-800 overflow-hidden"><summary class="flex items-center justify-between p-3.5 font-bold text-xs text-slate-200 cursor-pointer select-none bg-slate-900/80"><span>🧤 Atribut Spesialis Kiper</span><span class="text-slate-500 group-open:rotate-180 transition-transform">▼</span></summary><div class="p-3.5 space-y-2 border-t border-slate-800">';
+    GK.forEach(function(a){ h+=sgRow(a[2],a[0]+' / '+a[1],p.slots[a[2]],TAG.ok); });
+    h+='</div></details>';
+
+    h+='<details class="group bg-slate-900/40 rounded-xl border border-slate-800 overflow-hidden"><summary class="flex items-center justify-between p-3.5 font-bold text-xs text-slate-200 cursor-pointer select-none bg-slate-900/80"><span>🛡️ Reputasi &amp; Tersembunyi</span><span class="text-slate-500 group-open:rotate-180 transition-transform">▼</span></summary><div class="p-3.5 space-y-2 border-t border-slate-800">';
+    HIDDEN.forEach(function(a){ h+=numRow('s'+a[1],a[0],p.slots[a[1]],1,20,TAG.mid); });
+    h+=numRow('rep0','Reputasi Domestik',p.rep[0],0,10000,TAG.no);
+    h+=numRow('rep1','Reputasi Saat Ini',p.rep[1],0,10000,TAG.no);
+    h+=numRow('rep2','Reputasi Dunia',p.rep[2],0,10000,TAG.no);
+    h+='</div></details>';
+
+    $('form').innerHTML=h; $('s-edit').hidden=false; $('toast').textContent='';
+    refreshPreviews();
+    $('s-edit').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  function numRow(key,label,val,min,max,tag,note){
+    return '<div class="flex items-center justify-between gap-3 py-1.5 border-b border-slate-800/60 last:border-0">'+
+      '<div class="flex-1 min-w-0"><label for="i-'+key+'" class="text-xs font-bold text-slate-300 block truncate">'+esc(label)+' '+(tag||'')+'</label>'+(note?'<span class="text-[10px] text-slate-500 block truncate">'+esc(note)+'</span>':'')+'</div>'+
+      '<input id="i-'+key+'" type="number" inputmode="numeric" data-k="'+key+'" data-o="'+val+'" min="'+min+'" max="'+max+'" value="'+val+'" class="input-field w-20 px-2.5 py-1 text-right text-xs font-bold text-blue-400 font-mono">'+
+      '</div>';
+  }
+  function sgRow(slot,label,val,tag){
+    return '<div class="py-2 border-b border-slate-800/60 last:border-0">'+
+      '<div class="flex items-center justify-between gap-2 mb-1">'+
+        '<label for="i-b'+slot+'" class="text-xs font-bold text-slate-300 block truncate">'+esc(label)+' '+tag+'</label>'+
+        '<div class="flex gap-1.5">'+
+          '<input id="i-b'+slot+'" type="number" inputmode="numeric" data-k="b'+slot+'" data-o="'+val+'" min="0" max="255" value="'+val+'" class="input-field w-16 px-2 py-1 text-right text-xs font-bold text-blue-400 font-mono" placeholder="byte">'+
+          '<input type="number" inputmode="numeric" data-t="'+slot+'" min="1" max="20" class="input-field w-14 px-1.5 py-1 text-center text-xs font-bold text-emerald-400 font-mono" placeholder="game">'+
+        '</div>'+
+      '</div>'+
+      '<small data-pv="'+slot+'" class="text-[11px] text-slate-400 block"></small>'+
+      '</div>';
+  }
+
+  function curCA(){
+    var e=$('i-ca'); var v=e?parseInt(e.value,10):NaN;
+    return isNaN(v)?cur.ca:v;
+  }
+  function refreshPreviews(){
+    var ca=curCA();
+    var els=$('form').querySelectorAll('input[data-k^="b"]');
+    for(var i=0;i<els.length;i++){
+      var slot=els[i].getAttribute('data-k').substr(1), raw=parseInt(els[i].value,10);
+      var pv=$('form').querySelector('small[data-pv="'+slot+'"]');
+      if(!pv) continue;
+      if(isNaN(raw)||raw<0||raw>255){ pv.textContent='Isi rentang 0–255'; continue; }
+      var v=eng.estimate(raw,ca);
+      pv.innerHTML='≈ <strong class="text-emerald-400 font-bold">'+v+'</strong> di layar game'+pipHtml(v);
+    }
+  }
+  $('form').addEventListener('input',function(e){
+    var t=e.target;
+    if(t.hasAttribute('data-t')){
+      var tv=parseInt(t.value,10);
+      if(tv>=1&&tv<=20){
+        var slot=t.getAttribute('data-t');
+        $('i-b'+slot).value=eng.rawForTarget(tv,curCA());
+      }
+    }
+    refreshPreviews();
+  });
+
+  function closeEditor(){ cur=null; $('s-edit').hidden=true; $('form').innerHTML=''; }
+  $('close').onclick=closeEditor;
+
+  function intIn(el,min,max){
+    var v=parseInt(el.value,10);
+    if(isNaN(v)||v<min||v>max) return null;
+    return v;
+  }
+
+  $('apply').onclick=function(){
+    if(!cur) return;
+    var f=$('form'), A=cur.A, done=[], bad=[];
+    function once(k){return f.querySelector('input[data-k="'+k+'"]');}
+    var els=f.querySelectorAll('input[data-k]'), i, el, k, o, v, min, max;
+    var dobTouched=false;
+    for(i=0;i<els.length;i++){
+      el=els[i]; k=el.getAttribute('data-k'); o=parseInt(el.getAttribute('data-o'),10);
+      if(k.indexOf('dob-')===0){ if(parseInt(el.value,10)!==o) dobTouched=true; continue; }
+      min=parseInt(el.min,10); max=parseInt(el.max,10);
+      v=intIn(el,min,max);
+      if(v===null){ bad.push(k); continue; }
+      if(v===o) continue;
+      var label=(f.querySelector('label[for="'+el.id+'"]')||{}).textContent||k;
+      label=label.replace(/\s*(TERUJI|DUGAAN|BELUM DIUJI).*$|[\(\)]/g,'').trim();
+      if(k==='ca'){ eng.setU16(A+51,v); }
+      else if(k==='pa'){ eng.setU16(A+53,v); }
+      else if(k==='left'){ eng.setByte(A+49,v); }
+      else if(k==='right'){ eng.setByte(A+50,v); }
+      else if(k.indexOf('rep')===0){ eng.setU16(A+[55,57,59][+k.substr(3)],v); }
+      else if(k.charAt(0)==='b'||k.charAt(0)==='s'){ eng.setByte(A+parseInt(k.substr(1),10),v); }
+      else if(k.charAt(0)==='c'){ k.substr(1).split('_').forEach(function(sl){ eng.setByte(A+parseInt(sl,10),v); }); }
+      else continue;
+      done.push(label+': '+o+' → '+v);
+    }
+    if(dobTouched&&cur.dob){
+      var d=intIn(once('dob-d'),1,31), m=intIn(once('dob-m'),1,12), y=intIn(once('dob-y'),1930,2026);
+      var t=(d&&m&&y)?new Date(Date.UTC(y,m-1,d)):null;
+      if(!t||t.getUTCDate()!==d||t.getUTCMonth()!==m-1){ bad.push('tanggal lahir'); }
+      else{
+        var doy=Math.round((Date.UTC(y,m-1,d)-Date.UTC(y,0,1))/86400000);
+        var old=dobParts(cur.dob);
+        eng.setU16(cur.dob.p+20,doy); eng.setU16(cur.dob.p+22,y);
+        done.push('Tanggal lahir: '+old.d+' '+MONTHS[old.m-1]+' '+old.y+' → '+d+' '+MONTHS[m-1]+' '+y);
+      }
+    }
+    if(bad.length){ $('toast').className='text-xs font-semibold text-rose-400 mt-2 text-center min-h-[1.5em]'; $('toast').textContent='Periksa isian kembali: '+bad.join(', ')+'.'; if(!done.length) return; }
+    if(!done.length){ $('toast').className='text-xs font-semibold text-slate-400 mt-2 text-center min-h-[1.5em]'; $('toast').textContent='Tidak ada perubahan.'; return; }
+    done.forEach(function(s){ changes.push(cur.name+' — '+s); });
+    renderLog(); updateBar();
+    var sid=cur.sid, nm=cur.name;
+    openPlayer(sid,nm);
+    $('toast').className='text-xs font-bold text-emerald-400 mt-2 text-center min-h-[1.5em]'; $('toast').textContent=done.length+' perubahan berhasil diterapkan!';
+  };
+
+  function renderLog(){
+    $('s-log').hidden=!changes.length;
+    $('log').innerHTML=changes.map(function(c){return '<li>'+esc(c)+'</li>';}).join('');
+  }
+  function updateBar(){
+    $('bstat').textContent=changes.length?changes.length+' perubahan belum disimpan':(eng?'Belum ada perubahan':'Pilih file save dulu');
+    $('save').disabled=!(eng&&changes.length);
+  }
+
+  /* Safe Export Handling for WebView & Standard Browsers */
+  $('save').onclick = async function() {
+    if (!eng || !changes.length) return;
+    var out = fileName.replace(/(\.fms)?$/i, '_edited.fms');
+    
+    if (window.showSaveFilePicker) {
+      try {
+        var handle = await window.showSaveFilePicker({
+          suggestedName: out,
+          types: [{
+            description: 'Football Manager Save Game',
+            accept: {'application/octet-stream': ['.fms']}
+          }]
+        });
+        var writable = await handle.createWritable();
+        await writable.write(eng.buf);
+        await writable.close();
+        $('bstat').textContent = 'File tersimpan: ' + out;
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    try {
+      var blob = new Blob([eng.buf], {type: 'application/octet-stream'});
+      var reader = new FileReader();
+      reader.onloadend = function() {
+        var a = document.createElement('a');
+        a.href = reader.result;
+        a.download = out;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function(){ a.remove(); }, 4000);
+        $('bstat').textContent = 'Hasil tersimpan: ' + out;
+      };
+      reader.readAsDataURL(blob);
+    } catch (e) {
+      $('bstat').textContent = 'Gagal menyimpan: ' + e.message;
+    }
+  };
+
+  updateBar();
+  window.__fmm={get eng(){return eng;},openPlayer:openPlayer};
+})();
+</script>
+</body>
+</html>
